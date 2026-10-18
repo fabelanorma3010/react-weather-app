@@ -1,52 +1,90 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import axios from "axios";
-import FormattedDate from "./formattedDate";
+import WeatherInfo from "./WeatherInfo";
+import WeatherForecast from "./WeatherForecast";
 import "./Weather.css";
 
-const apiKey = "b2a5adcct04b33178913oc335f405433";
+const CURRENT_WEATHER_URL = "https://api.shecodes.io/weather/v1/current";
+const FORECAST_URL = "https://api.open-meteo.com/v1/forecast";
+const SHECODES_API_KEY = process.env.REACT_APP_SHECODES_API_KEY;
 
-export default function Weather({ defaultCity }) {
+export default function Weather({ defaultCity = "New York" }) {
+  const [weatherData, setWeatherData] = useState(null);
   const [city, setCity] = useState(defaultCity);
-  const [weather, setWeather] = useState(null);
   const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const requestController = useRef(null);
 
-  const fetchWeather = useCallback((cityName) => {
+  const loadWeather = useCallback(async (cityName) => {
+    requestController.current?.abort();
+    const controller = new AbortController();
+    requestController.current = controller;
     setLoading(true);
     setError("");
 
-    axios
-      .get("https://api.shecodes.io/weather/v1/current", {
-        params: { query: cityName, key: apiKey, units: "metric" },
-      })
-      .then(({ data }) => {
-        setWeather({
-          city: data.city,
-          temperature: data.temperature.current,
-          humidity: data.temperature.humidity,
-          description: data.condition.description,
-          iconUrl: data.condition.icon_url,
-          wind: data.wind.speed,
-          date: new Date(data.time * 1000),
-        });
-      })
-      .catch(() => {
-        setError("Weather data could not be loaded. Check the city and try again.");
-      })
-      .finally(() => {
-        setLoading(false);
+    try {
+      if (!SHECODES_API_KEY) {
+        setError("Missing SheCodes API key. Set REACT_APP_SHECODES_API_KEY and restart the app.");
+        return;
+      }
+
+      const { data: current } = await axios.get(CURRENT_WEATHER_URL, {
+        params: { query: cityName, key: SHECODES_API_KEY },
+        signal: controller.signal,
       });
+
+      const { data: forecast } = await axios.get(FORECAST_URL, {
+        params: {
+          latitude: current.coordinates.latitude,
+          longitude: current.coordinates.longitude,
+          daily: "weather_code,temperature_2m_max,temperature_2m_min",
+          timezone: "auto",
+          forecast_days: 6,
+        },
+        signal: controller.signal,
+      });
+
+      setWeatherData({
+        city: current.city,
+        country: current.country,
+        temperature: current.temperature.current,
+        humidity: current.temperature.humidity,
+        date: new Date(current.time * 1000),
+        description: current.condition.description,
+        iconUrl: current.condition.icon_url.replace(/^http:/, "https:"),
+        wind: current.wind.speed * 3.6,
+        forecast: forecast.daily.time.map((date, index) => ({
+          date,
+          weatherCode: forecast.daily.weather_code[index],
+          maxTemperature: forecast.daily.temperature_2m_max[index],
+          minTemperature: forecast.daily.temperature_2m_min[index],
+        })),
+      });
+    } catch (requestError) {
+      if (!axios.isCancel(requestError)) {
+        if (requestError.response?.status === 404) {
+          setError(`We couldn't find "${cityName}". Check the spelling and try again.`);
+        } else {
+          setError("Weather data could not be loaded. Please try again.");
+        }
+      }
+    } finally {
+      if (!controller.signal.aborted) {
+        setLoading(false);
+      }
+    }
   }, []);
 
   useEffect(() => {
-    fetchWeather(defaultCity);
-  }, [defaultCity, fetchWeather]);
+    loadWeather(defaultCity);
+    return () => requestController.current?.abort();
+  }, [defaultCity, loadWeather]);
 
   function handleSubmit(event) {
     event.preventDefault();
     const searchCity = city.trim();
     if (searchCity) {
-      fetchWeather(searchCity);
+      loadWeather(searchCity);
     }
   }
 
@@ -76,36 +114,10 @@ export default function Weather({ defaultCity }) {
       </form>
       {loading && <p role="status">Loading weather...</p>}
       {error && <p role="alert">{error}</p>}
-      {weather && (
+      {weatherData && (
         <>
-          <h2>{weather.city}</h2>
-          <ul>
-            <li>
-              <FormattedDate date={weather.date} />
-            </li>
-            <li>{weather.description}</li>
-          </ul>
-          <div className="row mt-3">
-            <div className="col-6 clearfix">
-              <img
-                src={weather.iconUrl}
-                alt={weather.description}
-                className="float-left"
-              />
-              <div className="float-left">
-                <span className="temperature">
-                  {Math.round(weather.temperature)}
-                </span>
-                <span className="unit">°C</span>
-              </div>
-            </div>
-            <div className="col-6">
-              <ul>
-                <li>Humidity: {weather.humidity}%</li>
-                <li>Wind: {weather.wind} km/h</li>
-              </ul>
-            </div>
-          </div>
+          <WeatherInfo data={weatherData} />
+          <WeatherForecast forecast={weatherData.forecast} />
         </>
       )}
     </div>
