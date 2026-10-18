@@ -40,13 +40,7 @@ const iconMap = {
   "mist": "FOG",
 };
 
-export default function WeatherIcon(props) {
-  return (
-    <ReactAnimatedWeather
-      icon={iconMap[props.code] || "CLEAR_DAY"}
-      color="#1E1E1E"
-      size={props.size || 52}
-      animate={true}
-    />
-  );
-}
+return(
+<ReactAnimatedWeather
+icon{codema}
+)
