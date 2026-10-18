@@ -39,6 +39,12 @@
   margin: 10px auto;
 }
 
+.Weather .weather-symbol {
+  display: inline-block;
+  font-size: 2.5rem;
+  line-height: 1;
+}
+
 .Weather .unit {
   color: rgb(33, 33, 33);
   font-size: 16px;
