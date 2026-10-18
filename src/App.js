@@ -8,6 +8,7 @@ export default function App() {
       <div className="container">
         <h1>Weather App</h1>
         <Weather defaultCity="New York" />
+
         <footer>
           This project was coded by{" "}
           <a
@@ -23,9 +24,8 @@ export default function App() {
             target="_blank"
             rel="noreferrer"
           >
-            open-sourced on GitHub
+            hosted on vercel
           </a>
-          .
         </footer>
       </div>
     </div>
