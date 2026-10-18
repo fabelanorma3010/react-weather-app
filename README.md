@@ -2,6 +2,12 @@
 
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
 
+## Weather API configuration
+
+In Vercel, add `SHECODES_API_KEY` as an environment variable for each deployment environment you use. Do not add a `REACT_APP_` prefix; the key is read by the server-side `/api/weather` function and should not be exposed in the browser. Redeploy after adding or changing the variable.
+
+For local development with `npm start`, add `REACT_APP_SHECODES_API_KEY` to the ignored `.env.local` file.
+
 ## Available Scripts
 
 In the project directory, you can run:

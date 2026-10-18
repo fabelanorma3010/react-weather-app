@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useState } from "react";
-import axios from "axios";
 import WeatherInfo from "./WeatherInfo";
 import WeatherForecast from "./WeatherForecast";
+import { getWeather } from "./weatherApi";
 import "./Weather.css";
 
 export default function Weather(props) {
@@ -10,19 +10,7 @@ export default function Weather(props) {
   const [error, setError] = useState(null);
 
   const search = useCallback((searchCity) => {
-    const apiKey = process.env.REACT_APP_SHECODES_API_KEY;
-
-    if (!apiKey) {
-      const apiError = new Error("REACT_APP_SHECODES_API_KEY is not configured.");
-      console.error(apiError);
-      setError("Weather data is unavailable.");
-      return;
-    }
-
-    axios
-      .get("https://api.shecodes.io/weather/v1/current", {
-        params: { query: searchCity, key: apiKey, units: "metric" },
-      })
+    getWeather("current", searchCity)
       .then((response) => {
         const data = response.data;
         setWeatherData({

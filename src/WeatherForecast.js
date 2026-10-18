@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import "./WeatherForecast.css";
-import axios from "axios";
 import WeatherForecastDay from "./WeatherForecastDay";
+import { getWeather } from "./weatherApi";
 
 export default function WeatherForecast(props) {
   const [loaded, setLoaded] = useState(false);
@@ -11,18 +11,7 @@ export default function WeatherForecast(props) {
     let cancelled = false;
     setLoaded(false);
 
-    const apiKey = process.env.REACT_APP_SHECODES_API_KEY;
-    if (!apiKey) {
-      console.error("REACT_APP_SHECODES_API_KEY is not configured.");
-      return () => {
-        cancelled = true;
-      };
-    }
-
-    axios
-      .get("https://api.shecodes.io/weather/v1/forecast", {
-        params: { query: props.city, key: apiKey, units: "metric" },
-      })
+    getWeather("forecast", props.city)
       .then((response) => {
         if (!Array.isArray(response.data.daily)) {
           throw new Error("The weather forecast response has no daily data.");
