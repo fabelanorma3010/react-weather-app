@@ -37,10 +37,18 @@ const iconMap = {
   "snow-night": "SNOW",
   "thunderstorm-day": "SLEET",
   "thunderstorm-night": "SLEET",
-  "mist": "FOG",
+  mist: "FOG",
 };
 
-return(
-<ReactAnimatedWeather
-icon{codema}
-)
+export default function WeatherIcon(props) {
+  const icon = iconMap[props.code] || "CLEAR_DAY";
+
+  return (
+    <ReactAnimatedWeather
+      icon={icon}
+      color="#1e1e1e"
+      size={props.size}
+      animate={true}
+    />
+  );
+}
